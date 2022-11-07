@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  selector:
+    matchLabels:
+      service: app
+  replicas: 5
+  template:
+    metadata:
+      labels:
+        service: app
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/os
+                  operator: In
+                  values:
+                    - linux
+                - key: node-role.kubernetes.io/worker
+                  operator: In
+                  values:
+                    - worker
+                - key: type
+                  operator: In
+                  values:
+                    - on-premise
+                - key: provider
+                  operator: In
+                  values:
+                    - host
+                - key: service
+                  operator: In
+                  values:
+                    - virtualbox
+                - key: region
+                  operator: In
+                  values:
+                    - local
+                - key: availability_zone
+                  operator: In
+                  values:
+                    - local-b
+      containers:
+        - name: main
+          image: sloopstash/app:v1
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: supervisor-server
+              mountPath: /etc/supervisord.conf
+              subPath: supervisor-server
+            - name: app-supervisor
+              mountPath: /etc/supervisord.d/app.ini
+              subPath: app-supervisor
+            - name: nginx-supervisor
+              mountPath: /etc/supervisord.d/nginx.ini
+              subPath: nginx-supervisor
+            - name: nginx-server
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx-server
+            - name: app-nginx
+              mountPath: /etc/nginx/conf.d/app.conf
+              subPath: app-nginx
+            - name: app-source
+              mountPath: /opt/app
+          command:
+            - "/usr/bin/supervisord"
+            - "-c"
+            - "/etc/supervisord.conf"
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            exec:
+              command:
+                - "/usr/bin/supervisorctl"
+                - "status"
+                - "nginx"
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /health
+              port: 80
+              httpHeaders:
+                - name: Host
+                  value: app.crm
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        - name: supervisor-server
+          configMap:
+            name: app
+        - name: app-supervisor
+          configMap:
+            name: app
+        - name: nginx-supervisor
+          configMap:
+            name: app
+        - name: nginx-server
+          configMap:
+            name: app
+        - name: app-nginx
+          configMap:
+            name: app
+        - name: app-source
+          hostPath:
+            path: /opt/kickstart-kubernetes/app
+            type: Directory
