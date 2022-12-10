@@ -48,7 +48,7 @@ spec:
                     - local-c
       containers:
         - name: main
-          image: sloopstash/redis:v1
+          image: learning/redis:v1
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: supervisor-server
@@ -83,7 +83,7 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
         - name: log
-          image: sloopstash/redis:v1
+          image: learning/redis:v1
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: supervisor-server

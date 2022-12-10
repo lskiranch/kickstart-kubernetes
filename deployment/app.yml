@@ -47,7 +47,7 @@ spec:
                     - local-b
       containers:
         - name: main
-          image: sloopstash/app:v1
+          image: learning/app:v1
           imagePullPolicy: Always
           volumeMounts:
             - name: supervisor-server
